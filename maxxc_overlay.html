@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxx C Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Honk&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .overlay-container {
+            position: relative;
+            width: 90%;
+            max-width: 380px; /* Max width for better mobile display */
+            background-color: transparent; /* Slightly opaque background */
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center; /* Center text alignment */
+        }
+
+        .maxx-c-count {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%; /* Full width */
+            margin: 10px 0; /* Reduced margin for compactness */
+        }
+
+        .overlay-container img {
+            width: 80px; /* Smaller image size for better fitting */
+            height: 80px;
+            margin: 0 10px; /* Margin around images */
+        }
+
+        .result-text {
+            font-size: 24px; /* Reduced font size */
+            font-family: "Honk", system-ui;
+        }
+
+        .maxx-c-percentage {
+            font-size: 24px; /* Reduced font size */
+            font-family: "Honk", system-ui;
+        }
+
+        .fredoka-green-outline, .fredoka-red-outline {
+            font-family: "Fredoka", sans-serif;
+            font-weight: 700;
+            text-shadow: -1px -2px 0 black, 3px -1px 0 black, -3px 1px 0 black, 1px 2px 0 black;
+        }
+
+        .fredoka-green-outline {
+            color: green;
+        }
+
+        .fredoka-red-outline {
+            color: red;
+        }
+
+        /* Bricks section styling */
+        .bricks-section {
+            margin-top: 20px; /* Space above bricks section */
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <img src="maxxcgif.gif" alt="Own Maxx C" id="own-maxx-c-img" style="width: 68px; height: 100px; margin-bottom: 10px;">
+        <div class="maxx-c-count"><span class="result-text">Mine Resolves = <span id="own-maxx-c-overlay" class="fredoka-green-outline">0</span></span>
+            <span class="maxx-c-percentage">&nbsp;BASED = <span id="own-maxx-c-percentage-overlay" class="fredoka-green-outline">0%</span></span>
+        </div>
+
+        <div class="maxx-c-count">
+            <span class="result-text">&nbsp;His Resolves = <span id="opponent-maxx-c-overlay" class="fredoka-red-outline">0</span></span>
+            <span class="maxx-c-percentage">CRINGE&nbsp; = <span id="opponent-maxx-c-percentage-overlay" class="fredoka-red-outline">0%</span></span>
+        </div>
+
+        <div class="bricks-section">
+            <img src="brick.webp" alt="Bricks" id="bricks-img" style="width: 60px; height: 34px;">
+            <span class="result-text">Bricks = <span id="bricks-overlay" class="fredoka-red-outline">0</span></span>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+
+        // Establish a WebSocket connection
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8080');
+
+            socket.onopen = function() {
+                console.log('WebSocket connection established for Maxx C overlay');
+            };
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                
+                // Update overlay with Maxx C data
+                if (message.type === 'maxxC') {
+                    updateOverlay(message.data);
+                }
+
+                // Initialize overlay with initial data
+                if (message.type === 'initial') {
+                    updateOverlay(message.maxxCData);
+                }
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket connection closed, retrying...');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            socket.onerror = function(error) {
+                console.log('WebSocket error: ', error);
+            };
+        }
+
+        // Update the overlay display with received data
+        function updateOverlay(data) {
+            document.getElementById('own-maxx-c-overlay').textContent = data.ownMaxxC;
+            document.getElementById('opponent-maxx-c-overlay').textContent = data.opponentMaxxC;
+            document.getElementById('own-maxx-c-percentage-overlay').textContent = data.ownMaxxCPercentage + '%';
+            document.getElementById('opponent-maxx-c-percentage-overlay').textContent = data.opponentMaxxCPercentage + '%';
+            document.getElementById('bricks-overlay').textContent = data.bricks;
+        }
+
+        // Connect WebSocket on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

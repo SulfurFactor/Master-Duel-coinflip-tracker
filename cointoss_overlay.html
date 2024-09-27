@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Toss Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Honk&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .overlay-container {
+            position: relative;
+            width: 1000px;
+            height: 400px;
+            background-image: url('background.png');
+            background-size: cover;
+            background-position: center;
+            text-align: left;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .coin-count-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coin-count {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .overlay-container img {
+            width: 100px;
+            height: 100px;
+            margin-right: 5px;
+        }
+
+        .result-text {
+            font-size: 42px;
+            font-family: "Honk", system-ui;
+        }
+
+        .win-percentage {
+            font-size: 50px;
+            font-family: "Honk", system-ui;
+            margin-left: 10px;
+        }
+
+        .fredoka-green-outline {
+            font-family: "Fredoka", sans-serif;
+            color: green;
+            font-weight: 700;
+            text-shadow: -3px -3px 0 black, 3px -3px 0 black, -3px 3px 0 black, 3px 3px 0 black;
+        }
+
+        .fredoka-red-outline {
+            font-family: "Fredoka", sans-serif;
+            color: red;
+            font-weight: 700;
+            text-shadow: -3px -3px 0 black, 3px -3px 0 black, -3px 3px 0 black, 3px 3px 0 black;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <div class="coin-count-wrapper">
+            <div class="coin-count">
+                <img src="win-coin.png" alt="Coin Won" id="coin-won-img">
+                <span class="result-text">= <span id="win-count-overlay" class="fredoka-green-outline">0</span></span>
+                <div class="win-percentage" style="text-align: right; margin-top: 5px;">&nbsp; Coinflip Win % = <span id="win-percentage-overlay">0%</span></div>
+            </div>
+            <div class="coin-count">
+                <img src="loss-coin.png" alt="Coin Lost" id="coin-lost-img">
+                <span class="result-text">= <span id="loss-count-overlay" class="fredoka-red-outline">0&nbsp;</span></span>
+                <div class="result-text" style="margin-top: 5px;">&nbsp; &nbsp; &nbsp;Most Coinflip Ls in a row = <span id="highest-losing-streak-overlay" class="fredoka-red-outline">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+
+        // Establish a WebSocket connection
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8080');
+
+            socket.onopen = function() {
+                console.log('WebSocket connection established for overlay');
+            };
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                
+                // Update overlay with coin toss data
+                if (message.type === 'cointoss') {
+                    updateOverlay(message.data);
+                }
+
+                // Initialize overlay with initial data
+                if (message.type === 'initial') {
+                    updateOverlay(message.coinTossData);
+                }
+            };
+
+            socket.onclose = function() {
+                console.log('WebSocket connection closed, retrying...');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            socket.onerror = function(error) {
+                console.log('WebSocket error: ', error);
+            };
+        }
+
+        // Update the overlay display with received data
+        function updateOverlay(data) {
+            document.getElementById('win-count-overlay').textContent = data.winCount;
+            document.getElementById('loss-count-overlay').textContent = data.lossCount;
+            document.getElementById('win-percentage-overlay').textContent = data.winPercentage + '%';
+            document.getElementById('highest-losing-streak-overlay').textContent = data.highestLosingStreak;
+        }
+
+        // Connect WebSocket on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>
