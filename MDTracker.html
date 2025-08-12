@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Tracker Controller</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --card-bg-color: #2d2d2d;
+            --text-color: #e0e0e0;
+            --primary-color: #007bff;
+            --danger-color: #dc3545;    /* Red for opponent/negative actions */
+            --danger-hover: #a71d2a;
+            --success-color: #28a745;   /* Green for player/positive actions */
+            --success-hover: #218838;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--primary-color);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        /* General Buttons */
+        .btn { padding: 10px 15px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; color: white; transition: background-color 0.2s; }
+        .btn-small { padding: 5px 10px; font-size: 1.1rem; font-weight: bold; }
+        
+        /* New Differentiated Increment Buttons */
+        .btn-player-inc { background-color: var(--success-color); }
+        .btn-player-inc:hover { background-color: var(--success-hover); }
+        .btn-opponent-inc { background-color: var(--danger-color); }
+        .btn-opponent-inc:hover { background-color: var(--danger-hover); }
+
+        .btn-dec { background-color: #6c757d; }
+        .btn-dec:hover { background-color: #5a6268; }
+        .btn-overlay { background-color: #17a2b8; width: 100%; margin-top: 20px;}
+        .btn-overlay:hover { background-color: #138496; }
+
+        /* Coin Toss Section */
+        .cointoss-counter-group {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            align-items: center; gap: 10px; margin-bottom: 15px;
+        }
+        .cointoss-stats-display { margin-top: 10px; font-size: 1rem; }
+        .cointoss-stats-display p { margin: 5px 0; }
+        .cointoss-stats-display span { font-weight: bold; color: var(--primary-color); }
+        .btn-reset-full { background-color: var(--danger-color); width: 100%; margin-top: 15px; }
+        .btn-reset-full:hover { background-color: var(--danger-hover); }
+
+        /* Hand Trap Grid Section */
+        .handtrap-grid {
+            display: grid;
+            grid-template-columns: 1fr repeat(2, minmax(120px, auto)) auto;
+            gap: 15px 10px;
+            align-items: center;
+        }
+        .grid-header { font-weight: bold; color: var(--primary-color); text-align: center; font-size: 0.9rem; }
+        .counter-cell { display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .counter-value { font-weight: bold; font-size: 1.2rem; min-width: 25px; text-align: center; }
+        .percentage-cell { text-align: center; font-weight: bold; }
+        .btn-reset-icon {
+            background-color: var(--danger-color);
+            border-radius: 5px;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            line-height: 1;
+            cursor: pointer;
+            color: white; border: none;
+            transition: background-color 0.2s;
+        }
+        .btn-reset-icon:hover { background-color: var(--danger-hover); }
+
+        /* Bricks counter at the bottom */
+        .bricks-counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            border-top: 1px solid #444;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 Stream Tracker Dashboard</h1>
+
+    <div class="container">
+        <div class="card">
+            <h2>🪙 Coin Toss</h2>
+            <div class="cointoss-counter-group">
+                <p>Wins</p>
+                <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'wins')">-</button>
+                <span class="counter-value" id="wins">0</span>
+                <button class="btn btn-small btn-player-inc" onclick="sendMessage('increment', 'wins')">+</button>
+            </div>
+            <div class="cointoss-counter-group">
+                <p>Losses</p>
+                <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'losses')">-</button>
+                <span class="counter-value" id="losses">0</span>
+                <button class="btn btn-small btn-opponent-inc" onclick="sendMessage('increment', 'losses')">+</button>
+            </div>
+            <div class="cointoss-stats-display">
+                <p>Win Rate: <span id="winPercentage">0.00%</span></p>
+                <p>Highest Losing Streak: <span id="highestLosingStreak">0</span></p>
+            </div>
+            <button class="btn btn-reset-full" onclick="sendMessage('reset', 'cointoss')">Reset Coin Toss</button>
+            <button class="btn btn-overlay" onclick="openOverlay('cointoss.html?view=cointoss')">Open Coin Toss Overlay</button>
+        </div>
+
+        <div class="card">
+            <h2>✋ Hand Traps & Bricks</h2>
+            <div class="handtrap-grid">
+                <div class="grid-header">Hand Trap</div>
+                <div class="grid-header">My / Their Counts</div>
+                <div class="grid-header">My / Their Rates</div>
+                <div class="grid-header">Action</div>
+
+                <div>Maxx "C"</div>
+                <div class="counter-cell">
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'ownMaxxC')">-</button><span class="counter-value" id="ownMaxxC">0</span><button class="btn btn-small btn-player-inc" onclick="sendMessage('increment', 'ownMaxxC')">+</button>
+                    /
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'opponentMaxxC')">-</button><span class="counter-value" id="opponentMaxxC">0</span><button class="btn btn-small btn-opponent-inc" onclick="sendMessage('increment', 'opponentMaxxC')">+</button>
+                </div>
+                <div class="percentage-cell"><span id="ownMaxxCPercentage">0%</span> / <span id="opponentMaxxCPercentage">0%</span></div>
+                <div><button title="Reset Maxx C" class="btn-reset-icon" onclick="sendMessage('reset', 'maxxC')">RESET</button></div>
+
+                <div>Droll</div>
+                <div class="counter-cell">
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'ownDroll')">-</button><span class="counter-value" id="ownDroll">0</span><button class="btn btn-small btn-player-inc" onclick="sendMessage('increment', 'ownDroll')">+</button>
+                    /
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'opponentDroll')">-</button><span class="counter-value" id="opponentDroll">0</span><button class="btn btn-small btn-opponent-inc" onclick="sendMessage('increment', 'opponentDroll')">+</button>
+                </div>
+                <div class="percentage-cell"><span id="ownDrollPercentage">0%</span> / <span id="opponentDrollPercentage">0%</span></div>
+                <div><button title="Reset Droll" class="btn-reset-icon" onclick="sendMessage('reset', 'droll')">RESET</button></div>
+
+                <div>Mulcharmys</div>
+                <div class="counter-cell">
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'ownGamma')">-</button><span class="counter-value" id="ownGamma">0</span><button class="btn btn-small btn-player-inc" onclick="sendMessage('increment', 'ownGamma')">+</button>
+                    /
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'opponentGamma')">-</button><span class="counter-value" id="opponentGamma">0</span><button class="btn btn-small btn-opponent-inc" onclick="sendMessage('increment', 'opponentGamma')">+</button>
+                </div>
+                <div class="percentage-cell"><span id="ownGammaPercentage">0%</span> / <span id="opponentGammaPercentage">0%</span></div>
+                <div><button title="Reset Gamma" class="btn-reset-icon" onclick="sendMessage('reset', 'gamma')">RESET</button></div>
+            </div>
+            
+            <div class="bricks-counter">
+                <h3>Bricks 🧱</h3>
+                <div class="counter-cell">
+                    <button class="btn btn-small btn-dec" onclick="sendMessage('decrement', 'bricks')">-</button>
+                    <span class="counter-value" id="bricks" style="font-size: 1.5rem;">0</span>
+                    <button class="btn btn-small btn-opponent-inc" onclick="sendMessage('increment', 'bricks')">+</button>
+                </div>
+                <button title="Reset Bricks" class="btn-reset-icon" onclick="sendMessage('reset', 'bricks')">RESET</button>
+            </div>
+
+            <button class="btn btn-overlay" onclick="openOverlay('handtraps.html?view=handtraps')">Open Hand Traps Overlay</button>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8080');
+            socket.onopen = () => console.log('WebSocket connection established');
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'initial' || message.type === 'update') {
+                    updateDisplay(message.data);
+                }
+            };
+            socket.onclose = () => {
+                console.log('WebSocket connection closed, retrying in 2s...');
+                setTimeout(connectWebSocket, 2000);
+            };
+            socket.onerror = (error) => console.log('WebSocket error: ', error);
+        }
+        function sendMessage(action, category = null) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const message = { action, category };
+                socket.send(JSON.stringify(message));
+            } else {
+                console.error("Socket is not open. Can't send message.");
+            }
+        }
+        function openOverlay(url) { window.open(url, '_blank'); }
+        function updateDisplay(data) {
+            for (const key in data) {
+                const element = document.getElementById(key);
+                if (element) {
+                    let value = data[key];
+                    if (key.toLowerCase().includes('percentage')) {
+                        value += '%';
+                    }
+                    element.textContent = value;
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', connectWebSocket);
+    </script>
+</body>
+</html>

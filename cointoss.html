@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Toss Overlay</title>
+    <style>
+        :root {
+            /* Color settings */
+            --win-color: #28a745;       /* Green for wins */
+            --loss-color: #dc3545;      /* Red for losses */
+            --win-text-color: #17a2b8;  /* Cyan for win text */
+            --loss-text-color: #6f42c1; /* Purple for loss text */
+            --equals-color: #ffffff;    /* White for equals symbols */
+            --outline-color: #000000;   /* Black for text outline */
+            --outline-width: 10px;       /* Outline thickness */
+            
+            /* Font settings */
+            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-size: 48px;
+            
+            /* Image settings */
+            --image-size: 90px;
+        }
+        
+        body {
+            background-color: transparent;
+            margin: 0;
+            padding: 10px;
+            font-family: var(--main-font);
+            color: white;
+        }
+        
+        /* Text outline effect - applies to ALL text elements */
+        .text-outline {
+            text-shadow: 
+                var(--outline-width) 0 var(--outline-color),
+                -var(--outline-width) 0 var(--outline-color),
+                0 var(--outline-width) var(--outline-color),
+                0 -var(--outline-width) var(--outline-color),
+                0 0 5px rgba(0,0,0,0.7); /* Additional shadow for depth */
+            -webkit-text-stroke: var(--outline-width) var(--outline-color);
+            paint-order: stroke fill;
+        }
+        
+        .overlay-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: fit-content;
+        }
+        
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .coin-image {
+            width: var(--image-size);
+            height: var(--image-size);
+            object-fit: contain;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.7));
+        }
+        
+        .equals {
+            color: var(--equals-color);
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+        
+        .win-value {
+            color: var(--win-color);
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+        
+        .win-text {
+            color: var(--win-text-color);
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+        
+        .loss-value {
+            color: var(--loss-color);
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+        
+        .loss-text {
+            color: var(--loss-text-color);
+            font-size: var(--font-size);
+            font-weight: bold;
+        }
+        
+        /* Apply outline to all text elements */
+        .equals, .win-value, .win-text, .loss-value, .loss-text {
+            text-shadow: 
+                var(--outline-width) 0 var(--outline-color),
+                -var(--outline-width) 0 var(--outline-color),
+                0 var(--outline-width) var(--outline-color),
+                0 -var(--outline-width) var(--outline-color),
+                0 0 5px rgba(0,0,0,0.7);
+            -webkit-text-stroke: var(--outline-width) var(--outline-color);
+            paint-order: stroke fill;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- Row 1: Wins -->
+        <div class="row">
+            <img src="win-coin.png" alt="Win" class="coin-image" id="win-coin-img">
+            <span class="equals">=</span>
+            <span class="win-value" id="wins">0</span>
+            <span class="equals"> &nbsp;/&nbsp;&nbsp;</span>
+            <span class="win-text">Coinflip Win%</span>
+            <span class="equals">=</span>
+            <span class="win-value" id="winPercentage">0%</span>
+        </div>
+        
+        <!-- Row 2: Losses -->
+        <div class="row">
+            <img src="loss-coin.png" alt="Loss" class="coin-image" id="loss-coin-img">
+            <span class="equals">=</span>
+            <span class="loss-value" id="losses">0</span>
+            <span class="equals">&nbsp;/&nbsp;</span>
+            <span class="loss-text">Most Coinflip Ls Streak</span>
+            <span class="equals">=</span>
+            <span class="loss-value" id="highestLosingStreak">0</span>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8080');
+
+            socket.onopen = () => console.log('WebSocket connection established for overlay');
+            
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'initial' || message.type === 'update') {
+                    updateDisplay(message.data);
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed, retrying...');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            socket.onerror = (error) => console.log('WebSocket error: ', error);
+        }
+
+        function updateDisplay(data) {
+            document.getElementById('wins').textContent = data.wins;
+            document.getElementById('losses').textContent = data.losses;
+            document.getElementById('winPercentage').textContent = data.winPercentage + '%';
+            document.getElementById('highestLosingStreak').textContent = data.highestLosingStreak;
+        }
+
+        document.addEventListener('DOMContentLoaded', connectWebSocket);
+    </script>
+</body>
+</html>

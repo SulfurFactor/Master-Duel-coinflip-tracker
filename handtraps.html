@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Traps Overlay</title>
+    <style>
+        :root {
+            /* Color settings */
+            --title-color: #17a2b8;     /* Cyan for title */
+            --mine-color: #28a745;      /* Green for player stats */
+            --theirs-color: #dc3545;    /* Red for opponent stats */
+            --equals-color: #ffffff;    /* White for equals symbols */
+            --brick-color: #dc3545;     /* Red for bricks */
+            --outline-color: #000000;   /* Black for text outline */
+            --outline-width: 8px;      /* Outline thickness */
+            
+            /* Font settings */
+            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --title-size: 40px;
+            --header-size: 36px;
+            --trap-name-size: 22px;
+            --value-size: 32px;
+            --brick-text-size: 22px;
+            
+            /* Image settings */
+            --trap-image-size: 80px;
+            --brick-image-size: 60px;
+            
+            /* Layout settings */
+            --column-gap: 30px;
+            --row-gap: 16px;
+        }
+        
+        body {
+            background-color: transparent;
+            margin: 0;
+            padding: 20px;
+            font-family: var(--main-font);
+            color: white;
+        }
+        
+        /* Text styling with outline and shadow */
+        .text-outline {
+            text-shadow: 
+                var(--outline-width) 0 var(--outline-color),
+                -var(--outline-width) 0 var(--outline-color),
+                0 var(--outline-width) var(--outline-color),
+                0 -var(--outline-width) var(--outline-color),
+                0 0 10px rgba(0,0,0,0.7);
+            -webkit-text-stroke: var(--outline-width) var(--outline-color);
+            paint-order: stroke fill;
+        }
+        
+        .overlay-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--row-gap);
+            width: fit-content;
+        }
+        
+        .title {
+            color: var(--title-color);
+            font-size: var(--title-size);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .headers {
+            display: flex;
+            gap: var(--column-gap);
+        }
+        
+        .header-mine, .header-theirs {
+            font-size: var(--header-size);
+            font-weight: bold;
+        }
+        
+        .header-mine {
+            color: var(--mine-color);
+        }
+        
+        .header-theirs {
+            color: var(--theirs-color);
+        }
+        
+        .equals {
+            color: var(--equals-color);
+            font-size: var(--value-size);
+            font-weight: bold;
+        }
+        
+        .trap-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .trap-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+        
+        .trap-image {
+            width: var(--trap-image-size);
+            height: var(--trap-image-size);
+            object-fit: contain;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.7));
+        }
+        
+        .trap-name {
+            font-size: var(--trap-name-size);
+            font-weight: bold;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .values-container {
+            display: flex;
+            gap: var(--column-gap);
+        }
+        
+        .value-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+        
+        .value, .percentage {
+            font-size: var(--value-size);
+            font-weight: bold;
+        }
+        
+        .value-mine, .percentage-mine {
+            color: var(--mine-color);
+        }
+        
+        .value-theirs, .percentage-theirs {
+            color: var(--theirs-color);
+        }
+        
+        .brick-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .brick-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .brick-image {
+            width: var(--brick-image-size);
+            height: var(--brick-image-size);
+            object-fit: contain;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.7));
+        }
+        
+        .brick-text {
+            color: var(--brick-color);
+            font-size: var(--brick-text-size);
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .brick-value {
+            color: var(--brick-color);
+            font-size: var(--value-size);
+            font-weight: bold;
+        }
+        
+        /* Apply outline and shadow to all text elements */
+        .title, .header-mine, .header-theirs, .equals, 
+        .trap-name, .value, .percentage, .brick-value, .brick-text {
+            text-shadow: 
+                var(--outline-width) 0 var(--outline-color),
+                -var(--outline-width) 0 var(--outline-color),
+                0 var(--outline-width) var(--outline-color),
+                0 -var(--outline-width) var(--outline-color),
+                0 0 5px rgba(0,0,0,0.7);
+            -webkit-text-stroke: var(--outline-width) var(--outline-color);
+            paint-order: stroke fill;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <div class="title">Resolved HandTraps <span class="equals">:</span></div>
+        
+        <div class="headers">
+            <div class="header-mine">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;Mine <span class="equals">:</span></div>
+            <div class="header-theirs">Bozo's <span class="equals">:</span></div>
+        </div>
+        
+        <!-- Maxx C Row -->
+        <div class="trap-row">
+            <div class="trap-container">
+                <img src="MaxxCICO.png" alt="Maxx C" class="trap-image" id="maxxc-img">
+                <div class="trap-name">Roach</div>
+            </div>
+            <span class="equals">=</span>
+            <div class="values-container">
+                <div class="value-group">
+                    <div class="value value-mine" id="ownMaxxC">0</div>
+                    <div class="percentage percentage-mine" id="ownMaxxCPercentage">0%</div>
+                </div>
+                <div class="value-group">
+                    <div class="value value-theirs" id="opponentMaxxC">&nbsp; &nbsp;0</div>
+                    <div class="percentage percentage-theirs" id="opponentMaxxCPercentage">&nbsp; &nbsp;0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Droll Row -->
+        <div class="trap-row">
+            <div class="trap-container">
+                <img src="DrollICO.png" alt="Droll" class="trap-image" id="droll-img">
+                <div class="trap-name">Birb</div>
+            </div>
+            <span class="equals">=</span>
+            <div class="values-container">
+                <div class="value-group">
+                    <div class="value value-mine" id="ownDroll">0</div>
+                    <div class="percentage percentage-mine" id="ownDrollPercentage">0%</div>
+                </div>
+                <div class="value-group">
+                    <div class="value value-theirs" id="opponentDroll">&nbsp; &nbsp;0</div>
+                    <div class="percentage percentage-theirs" id="opponentDrollPercentage">&nbsp; &nbsp;0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gamma Row -->
+        <div class="trap-row">
+            <div class="trap-container">
+                <img src="MulchysICO.png" alt="Gamma" class="trap-image" id="gamma-img">
+                <div class="trap-name">Jellys</div>
+            </div>
+            <span class="equals">=</span>
+            <div class="values-container">
+                <div class="value-group">
+                    <div class="value value-mine" id="ownGamma">0</div>
+                    <div class="percentage percentage-mine" id="ownGammaPercentage">0%</div>
+                </div>
+                <div class="value-group">
+                    <div class="value value-theirs" id="opponentGamma">&nbsp; &nbsp;0</div>
+                    <div class="percentage percentage-theirs" id="opponentGammaPercentage">&nbsp; &nbsp;0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bricks Row -->
+        <div class="brick-row">
+            <div class="brick-container">
+                <img src="brick.webp" alt="Bricks" class="brick-image" id="brick-img">
+                <div class="brick-text">Bricks</div>
+            </div>
+            <span class="equals">=</span>
+            <div class="brick-value" id="bricks">0</div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+
+        function connectWebSocket() {
+            socket = new WebSocket('ws://localhost:8080');
+
+            socket.onopen = () => console.log('WebSocket connection established for overlay');
+            
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'initial' || message.type === 'update') {
+                    updateDisplay(message.data);
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed, retrying...');
+                setTimeout(connectWebSocket, 1000);
+            };
+
+            socket.onerror = (error) => console.log('WebSocket error: ', error);
+        }
+
+        function updateDisplay(data) {
+            document.getElementById('ownMaxxC').textContent = data.ownMaxxC;
+            document.getElementById('opponentMaxxC').textContent = data.opponentMaxxC;
+            document.getElementById('ownMaxxCPercentage').textContent = data.ownMaxxCPercentage + '%';
+            document.getElementById('opponentMaxxCPercentage').textContent = data.opponentMaxxCPercentage + '%';
+            
+            document.getElementById('ownDroll').textContent = data.ownDroll;
+            document.getElementById('opponentDroll').textContent = data.opponentDroll;
+            document.getElementById('ownDrollPercentage').textContent = data.ownDrollPercentage + '%';
+            document.getElementById('opponentDrollPercentage').textContent = data.opponentDrollPercentage + '%';
+            
+            document.getElementById('ownGamma').textContent = data.ownGamma;
+            document.getElementById('opponentGamma').textContent = data.opponentGamma;
+            document.getElementById('ownGammaPercentage').textContent = data.ownGammaPercentage + '%';
+            document.getElementById('opponentGammaPercentage').textContent = data.opponentGammaPercentage + '%';
+            
+            document.getElementById('bricks').textContent = data.bricks;
+        }
+
+        document.addEventListener('DOMContentLoaded', connectWebSocket);
+    </script>
+</body>
+</html>
